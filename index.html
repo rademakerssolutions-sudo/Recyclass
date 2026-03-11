@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RecyClass — Packaging Guideline Finder</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --green:#2ecf8e; --bg:#0b120e; --card:#111c15; --card2:#162019;
+    --border:rgba(46,207,142,0.18); --text:#e8f0eb; --muted:#6b8f78;
+  }
+  body {
+    min-height:100vh; background:var(--bg); color:var(--text);
+    font-family:'DM Sans',sans-serif;
+    display:flex; flex-direction:column; align-items:center;
+    padding:0 16px 60px; position:relative; overflow-x:hidden;
+  }
+  body::before {
+    content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background:radial-gradient(ellipse 60% 40% at 20% 10%,rgba(46,207,142,0.08) 0%,transparent 70%),
+               radial-gradient(ellipse 50% 50% at 80% 80%,rgba(46,207,142,0.05) 0%,transparent 70%);
+  }
+  body::after {
+    content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background-image:radial-gradient(circle,rgba(46,207,142,0.06) 1px,transparent 1px);
+    background-size:28px 28px;
+  }
+  .wrap { position:relative; z-index:1; width:100%; max-width:680px; }
+
+  /* Header */
+  header { text-align:center; padding:50px 0 34px; animation:fadeDown 0.7s ease both; }
+  .logo-tag {
+    display:inline-flex; align-items:center; gap:8px;
+    background:rgba(46,207,142,0.1); border:1px solid var(--border);
+    border-radius:100px; padding:5px 14px 5px 10px;
+    font-size:11px; letter-spacing:0.12em; text-transform:uppercase;
+    color:var(--green); margin-bottom:18px;
+  }
+  .logo-dot { width:7px; height:7px; background:var(--green); border-radius:50%; animation:pulse 2s ease infinite; }
+  h1 { font-family:'DM Serif Display',serif; font-size:clamp(26px,5vw,40px); font-weight:400; line-height:1.2; color:#fff; margin-bottom:10px; }
+  h1 em { font-style:italic; color:var(--green); }
+  .subtitle { color:var(--muted); font-size:14px; font-weight:300; }
+
+  /* AI Card */
+  .ai-section { margin-bottom:24px; animation:slideUp 0.5s cubic-bezier(.22,1,.36,1) both; animation-delay:0.1s; }
+  .ai-card {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:20px; padding:26px 26px 22px;
+    box-shadow:0 4px 40px rgba(0,0,0,0.5); position:relative; overflow:hidden;
+  }
+  .ai-card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:1px;
+    background:linear-gradient(90deg,transparent,rgba(46,207,142,0.5),transparent);
+  }
+  .ai-label {
+    display:flex; align-items:center; gap:7px;
+    font-size:10px; letter-spacing:0.18em; text-transform:uppercase;
+    color:var(--green); margin-bottom:12px;
+  }
+  .input-row { display:flex; gap:10px; align-items:stretch; }
+  .ai-input {
+    flex:1; background:var(--card2); border:1px solid rgba(255,255,255,0.1);
+    border-radius:12px; color:var(--text);
+    font-family:'DM Sans',sans-serif; font-size:15px;
+    padding:13px 16px; outline:none;
+    transition:border-color 0.2s, box-shadow 0.2s;
+    resize:none; min-height:50px; max-height:120px; line-height:1.4;
+  }
+  .ai-input::placeholder { color:var(--muted); font-style:italic; }
+  .ai-input:focus { border-color:rgba(46,207,142,0.45); box-shadow:0 0 0 3px rgba(46,207,142,0.08); }
+  .ai-btn {
+    background:var(--green); border:none; border-radius:12px;
+    color:#07130d; font-family:'DM Sans',sans-serif;
+    font-size:13px; font-weight:500; letter-spacing:0.04em;
+    padding:13px 20px; cursor:pointer; flex-shrink:0;
+    display:flex; align-items:center; gap:7px;
+    transition:background 0.2s, transform 0.15s, box-shadow 0.2s;
+    box-shadow:0 4px 16px rgba(46,207,142,0.2);
+  }
+  .ai-btn:hover { background:#38e8a0; transform:translateY(-1px); box-shadow:0 6px 22px rgba(46,207,142,0.3); }
+  .ai-btn:active { transform:translateY(0); }
+  .ai-btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+  .thinking { display:none; align-items:center; gap:10px; margin-top:13px; font-size:13px; color:var(--green); font-style:italic; }
+  .thinking.on { display:flex; }
+  .dots span { display:inline-block; width:5px; height:5px; border-radius:50%; background:var(--green); animation:blink 1.2s ease infinite; margin:0 1px; }
+  .dots span:nth-child(2) { animation-delay:0.2s; }
+  .dots span:nth-child(3) { animation-delay:0.4s; }
+  .interpretation {
+    display:none; margin-top:13px;
+    background:rgba(46,207,142,0.07); border:1px solid rgba(46,207,142,0.2);
+    border-radius:10px; padding:11px 14px; font-size:13px; color:var(--text); line-height:1.5;
+    animation:fadeIn 0.3s ease;
+  }
+  .interpretation.on { display:block; }
+  .interpretation strong { color:var(--green); font-weight:500; }
+  .ai-hint { margin-top:10px; font-size:12px; color:var(--muted); display:flex; align-items:center; gap:5px; }
+
+  /* Divider */
+  .divider {
+    display:flex; align-items:center; gap:12px; margin:18px 0;
+    color:var(--muted); font-size:11px; letter-spacing:0.1em; text-transform:uppercase;
+  }
+  .divider::before,.divider::after { content:''; flex:1; height:1px; background:rgba(255,255,255,0.07); }
+
+  /* Tree */
+  .progress { display:flex; justify-content:center; gap:6px; margin-bottom:16px; }
+  .dot-s { width:6px; height:6px; border-radius:50%; background:rgba(46,207,142,0.2); transition:background 0.3s,transform 0.3s; }
+  .dot-s.active { background:var(--green); transform:scale(1.3); }
+  .dot-s.done { background:rgba(46,207,142,0.5); }
+  .breadcrumb { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-bottom:16px; min-height:22px; }
+  .crumb { font-size:12px; color:var(--green); background:rgba(46,207,142,0.1); border:1px solid rgba(46,207,142,0.2); border-radius:100px; padding:3px 11px; }
+  .crumb-sep { color:var(--muted); font-size:14px; }
+  .card {
+    background:var(--card); border:1px solid var(--border); border-radius:20px;
+    padding:30px 26px 26px; box-shadow:0 4px 40px rgba(0,0,0,0.5);
+    animation:slideUp 0.4s cubic-bezier(.22,1,.36,1) both;
+    position:relative; overflow:hidden;
+  }
+  .card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:1px;
+    background:linear-gradient(90deg,transparent,rgba(46,207,142,0.4),transparent);
+  }
+  .q-label { font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:var(--green); margin-bottom:9px; display:flex; align-items:center; gap:8px; }
+  .q-label::before { content:''; width:18px; height:1px; background:var(--green); opacity:0.5; }
+  .q-text { font-family:'DM Serif Display',serif; font-size:clamp(17px,3vw,22px); color:#fff; margin-bottom:22px; line-height:1.35; }
+  .options { display:flex; flex-direction:column; gap:9px; }
+  .opt-btn {
+    display:flex; align-items:center; gap:13px;
+    background:var(--card2); border:1px solid rgba(255,255,255,0.07);
+    border-radius:11px; padding:13px 16px;
+    color:var(--text); font-family:'DM Sans',sans-serif; font-size:14px;
+    cursor:pointer; text-align:left; width:100%; position:relative; overflow:hidden;
+    transition:border-color 0.2s, background 0.2s, transform 0.18s;
+  }
+  .opt-btn.hl { border-color:rgba(46,207,142,0.5); background:rgba(46,207,142,0.08); }
+  .opt-btn.hl::after { content:'✦ AI match'; position:absolute; top:6px; right:10px; font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:var(--green); opacity:0.7; }
+  .opt-btn.auto-click { border-color:var(--green) !important; background:rgba(46,207,142,0.2) !important; transform:translateX(6px) !important; box-shadow:0 0 0 3px rgba(46,207,142,0.15); transition: all 0.25s ease; }
+  .opt-btn:hover { border-color:rgba(46,207,142,0.45); background:#1a2c20; transform:translateX(4px); }
+  .opt-btn:active { transform:translateX(2px) scale(0.99); }
+  .opt-icon { font-size:20px; width:30px; text-align:center; flex-shrink:0; }
+  .opt-label { flex:1; line-height:1.3; }
+  .opt-arr { color:var(--green); opacity:0.4; font-size:17px; flex-shrink:0; transition:opacity 0.2s,transform 0.2s; }
+  .opt-btn:hover .opt-arr { opacity:1; transform:translateX(3px); }
+
+  /* Result */
+  .result-card { text-align:center; padding:4px 0 2px; animation:fadeIn 0.5s ease; }
+  .result-badge { display:inline-flex; align-items:center; gap:8px; background:rgba(46,207,142,0.12); border:1px solid rgba(46,207,142,0.3); border-radius:100px; padding:6px 16px; font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:var(--green); margin-bottom:18px; }
+  .result-title { font-family:'DM Serif Display',serif; font-size:clamp(16px,3vw,22px); color:#fff; line-height:1.4; margin-bottom:8px; }
+  .result-desc { font-size:13px; color:var(--muted); margin-bottom:26px; line-height:1.5; }
+  .dl-btn {
+    display:inline-flex; align-items:center; gap:10px;
+    background:var(--green); color:#07130d;
+    font-family:'DM Sans',sans-serif; font-size:14px; font-weight:500;
+    border:none; border-radius:10px; padding:13px 26px;
+    text-decoration:none; cursor:pointer;
+    transition:background 0.2s,transform 0.18s,box-shadow 0.2s;
+    box-shadow:0 4px 20px rgba(46,207,142,0.25);
+  }
+  .dl-btn:hover { background:#38e8a0; transform:translateY(-2px); box-shadow:0 8px 30px rgba(46,207,142,0.35); }
+  .url-copy-row {
+    display:flex; align-items:center; gap:8px;
+    margin-top:16px; background:var(--card2);
+    border:1px solid rgba(255,255,255,0.08); border-radius:10px;
+    padding:10px 14px; overflow:hidden;
+  }
+  .url-text {
+    flex:1; font-size:11px; color:var(--muted); white-space:nowrap;
+    overflow:hidden; text-overflow:ellipsis; font-family:monospace;
+  }
+  .copy-btn {
+    flex-shrink:0; background:rgba(46,207,142,0.12);
+    border:1px solid rgba(46,207,142,0.25); border-radius:7px;
+    color:var(--green); font-family:'DM Sans',sans-serif; font-size:12px;
+    padding:5px 11px; cursor:pointer; transition:all 0.2s; white-space:nowrap;
+  }
+  .copy-btn:hover { background:rgba(46,207,142,0.22); }
+
+
+  /* Nav */
+  .nav-row { display:none; gap:10px; margin-top:18px; justify-content:center; }
+  .nav-btn {
+    display:inline-flex; align-items:center; gap:6px;
+    background:transparent; border:1px solid rgba(255,255,255,0.12);
+    border-radius:8px; color:var(--muted);
+    font-family:'DM Sans',sans-serif; font-size:13px; padding:8px 15px;
+    cursor:pointer; transition:border-color 0.2s,color 0.2s,background 0.2s;
+  }
+  .nav-btn:hover { border-color:rgba(255,255,255,0.25); color:var(--text); background:rgba(255,255,255,0.04); }
+
+  footer { margin-top:44px; text-align:center; font-size:11px; letter-spacing:0.1em; color:rgba(107,143,120,0.4); text-transform:uppercase; }
+  footer a { color:rgba(107,143,120,0.6); text-decoration:none; }
+  footer a:hover { color:var(--green); }
+
+  @keyframes fadeDown { from{opacity:0;transform:translateY(-16px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes slideUp  { from{opacity:0;transform:translateY(20px)}  to{opacity:1;transform:translateY(0)} }
+  @keyframes fadeIn   { from{opacity:0} to{opacity:1} }
+  @keyframes pulse    { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  @keyframes blink    { 0%,80%,100%{opacity:0} 40%{opacity:1} }
+
+  @media(max-width:480px){
+    .card,.ai-card{padding:18px 14px}
+    .opt-icon{display:none}
+    .input-row{flex-direction:column}
+    .ai-btn{width:100%;justify-content:center}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="logo-tag"><span class="logo-dot"></span> RecyClass Guidelines</div>
+    <h1>Find your <em>recycling</em><br>design guideline</h1>
+    <p class="subtitle">Describe your product — AI will guide you to the right PDF.</p>
+  </header>
+
+  <!-- AI Input -->
+  <div class="ai-section">
+    <div class="ai-card">
+      <div class="ai-label">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        AI-powered product detection
+      </div>
+      <div class="input-row">
+        <textarea id="aiInput" class="ai-input" rows="1"
+          placeholder="e.g. clear PET water bottle, blue PP yoghurt pot, natural HDPE milk jug, EPS fish box…"></textarea>
+        <button id="aiBtn" class="ai-btn" onclick="analyseProduct()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          Analyse
+        </button>
+      </div>
+      <div id="thinking" class="thinking">
+        <div class="dots"><span></span><span></span><span></span></div>
+        Analysing your product…
+      </div>
+      <div id="interpretation" class="interpretation"></div>
+      <p class="ai-hint">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        Powered by Claude · Your description is sent to the Anthropic API
+      </p>
+    </div>
+  </div>
+
+  <div class="divider">or navigate manually</div>
+
+  <div class="progress" id="progress"></div>
+  <div class="breadcrumb" id="breadcrumb"></div>
+  <div class="card" id="card"></div>
+  <div class="nav-row" id="nav"></div>
+
+  <footer>
+    Source: <a href="https://recyclass.eu/protocols-guidelines/design-for-recycling-guidelines/packaging/" target="_blank">recyclass.eu</a>
+    &nbsp;·&nbsp; Guidelines updated March 2026
+  </footer>
+</div>
+
+<script>
+const GL = [
+  {id:"pet-clear",    title:"Transparent Clear & Light-blue PET Bottles",  url:"https://recyclass.eu/wp-content/uploads/2026/03/RecyClass-DfR-Guidelines-Transparent-clear-light-blue-PET-bottles.pdf"},
+  {id:"pet-col",      title:"Transparent Coloured PET Bottles",             url:"https://recyclass.eu/wp-content/uploads/2026/03/RecyClass-DfR-Guidelines-Transparent-coloured-PET-bottles.pdf"},
+  {id:"pet-white",    title:"White Opaque PET Bottles (food-contact)",      url:"https://recyclass.eu/wp-content/uploads/2026/03/RecyClass-DfR-Guidelines-White-opaque-PET-bottles.pdf"},
+  {id:"pet-tf-clear", title:"Transparent Clear PET Thermoforms",            url:"https://recyclass.eu/wp-content/uploads/2026/03/RecyClass-DfR-Guidelines-Transprent-clear-PET-Thermoforms.pdf"},
+  {id:"pet-tf-col",   title:"Coloured PET Thermoforms",                     url:"https://recyclass.eu/wp-content/uploads/2026/03/RecyClass-DfR-Guidelines-Transparent-coloured-PET-thermoforms.pdf"},
+  {id:"pe-nat",       title:"Natural PE Flexible Films",                    url:"https://recyclass.eu/wp-content/uploads/2026/03/RecyClass-DfR-Guidelines-Natural-PE-Films.pdf"},
+  {id:"pe-col",       title:"Coloured PE Flexible Films",                   url:"https://recyclass.eu/wp-content/uploads/2026/03/RecyClass-DfR-Guidelines-Coloured-PE-Films.pdf"},
+  {id:"pp-film-nat",  title:"Natural PP Flexible Films",                    url:"https://recyclass.eu/wp-content/uploads/2026/03/RecyClass-DfR-Guidelines-Natural-PP-Films.pdf"},
+  {id:"pp-film-col",  title:"Coloured PP Flexible Films",                   url:"https://recyclass.eu/wp-content/uploads/2026/03/RecyClass-DfR-Guidelines-Coloured-PP-Films.pdf"},
+  {id:"hdpe-white",   title:"Natural and White HDPE Containers",            url:"https://recyclass.eu/wp-content/uploads/2026/03/RecyClass-DfR-Guidelines-Natural-and-white-HDPE-containers.pdf"},
+  {id:"hdpe-col",     title:"Coloured HDPE Containers and Tubes",           url:"https://recyclass.eu/wp-content/uploads/2026/03/RecyClass-DfR-Guidelines-Coloured-HDPE-containers.pdf"},
+  {id:"hdpe-crates",  title:"HDPE Crates & Pallets",                        url:"https://recyclass.eu/wp-content/uploads/2026/03/RecyClass-DfR-Guidelines-HDPE-crates-pallets.pdf"},
+  {id:"ps-white",     title:"Natural and White PS Containers",              url:"https://recyclass.eu/wp-content/uploads/2026/03/RecyClass-DfR-Guidelines-Natural-and-white-PS-containers.pdf"},
+  {id:"ps-col",       title:"Coloured PS Containers",                       url:"https://recyclass.eu/wp-content/uploads/2026/03/RecyClass-DfR-Guidelines-Coloured-PS-containers.pdf"},
+  {id:"pp-white",     title:"Natural and White PP Containers",              url:"https://recyclass.eu/wp-content/uploads/2026/03/RecyClass-DfR-Guidelines-Natural-and-white-PP-containers.pdf"},
+  {id:"pp-col",       title:"Coloured PP Containers and Tubes",             url:"https://recyclass.eu/wp-content/uploads/2026/03/RecyClass-DfR-Guidelines-Coloured-PP-containers.pdf"},
+  {id:"pp-crates",    title:"PP Crates & Pallets",                          url:"https://recyclass.eu/wp-content/uploads/2026/03/RecyClass-DfR-Guidelines-PP-crates-pallets.pdf"},
+  {id:"eps-fish",     title:"EPS Fish Boxes",                               url:"https://recyclass.eu/wp-content/uploads/2026/03/RecyClass-DfR-Guidelines-EPS-fish-boxes.pdf"},
+  {id:"eps-white",    title:"EPS White Goods",                              url:"https://recyclass.eu/wp-content/uploads/2026/03/RecyClass-DfR-Guidelines-EPS-white-goods.pdf"},
+];
+
+const TREE = {
+  q:"What is your packaging material?", step:0, opts:[
+    {label:"PET", icon:"🧴", next:{q:"What form is your PET packaging?", step:1, opts:[
+      {label:"Bottles", icon:"🍶", next:{q:"What colour is your PET bottle?", step:2, opts:[
+        {label:"Transparent Clear / Light Blue", icon:"💧", id:"pet-clear"},
+        {label:"Transparent Coloured",           icon:"🎨", id:"pet-col"},
+        {label:"White Opaque (food-contact)",    icon:"🥛", id:"pet-white"},
+      ]}},
+      {label:"Thermoforms", icon:"📦", next:{q:"What colour is your PET thermoform?", step:2, opts:[
+        {label:"Transparent Clear", icon:"💧", id:"pet-tf-clear"},
+        {label:"Coloured",          icon:"🎨", id:"pet-tf-col"},
+      ]}},
+    ]}},
+    {label:"PE Films", icon:"🛍️", next:{q:"What colour is your PE flexible film?", step:1, opts:[
+      {label:"Natural", icon:"⬜", id:"pe-nat"},
+      {label:"Coloured", icon:"🎨", id:"pe-col"},
+    ]}},
+    {label:"PP Films", icon:"🎞️", next:{q:"What colour is your PP flexible film?", step:1, opts:[
+      {label:"Natural", icon:"⬜", id:"pp-film-nat"},
+      {label:"Coloured", icon:"🎨", id:"pp-film-col"},
+    ]}},
+    {label:"HDPE", icon:"🪣", next:{q:"What type of HDPE packaging?", step:1, opts:[
+      {label:"Containers / Tubes", icon:"🧴", next:{q:"What colour is your HDPE container/tube?", step:2, opts:[
+        {label:"Natural / White", icon:"⬜", id:"hdpe-white"},
+        {label:"Coloured",        icon:"🎨", id:"hdpe-col"},
+      ]}},
+      {label:"Crates & Pallets", icon:"📦", id:"hdpe-crates"},
+    ]}},
+    {label:"PS", icon:"🥤", next:{q:"What colour is your PS container?", step:1, opts:[
+      {label:"Natural / White", icon:"⬜", id:"ps-white"},
+      {label:"Coloured",        icon:"🎨", id:"ps-col"},
+    ]}},
+    {label:"PP Containers", icon:"📫", next:{q:"What type of PP packaging?", step:1, opts:[
+      {label:"Containers / Tubes", icon:"🧴", next:{q:"What colour is your PP container/tube?", step:2, opts:[
+        {label:"Natural / White", icon:"⬜", id:"pp-white"},
+        {label:"Coloured",        icon:"🎨", id:"pp-col"},
+      ]}},
+      {label:"Crates & Pallets", icon:"📦", id:"pp-crates"},
+    ]}},
+    {label:"EPS", icon:"📦", next:{q:"What type of EPS packaging?", step:1, opts:[
+      {label:"Fish Boxes",  icon:"🐟", id:"eps-fish"},
+      {label:"White Goods", icon:"🏠", id:"eps-white"},
+    ]}},
+  ]
+};
+
+let history=[], current=TREE, suggestedId=null;
+const MAX=3;
+const $card=document.getElementById('card');
+const $bc=document.getElementById('breadcrumb');
+const $nav=document.getElementById('nav');
+const $prog=document.getElementById('progress');
+
+function gl(id){return GL.find(g=>g.id===id);}
+
+function hasId(node,id){
+  for(const o of node.opts){
+    if(o.id===id) return true;
+    if(o.next && hasId(o.next,id)) return true;
+  }
+  return false;
+}
+
+function mk(tag,cls,html){
+  const e=document.createElement(tag);
+  if(cls) e.className=cls;
+  if(html!==undefined) e.innerHTML=html;
+  return e;
+}
+
+function render(){
+  renderProg(); renderBC(); $card.innerHTML='';
+  $card.appendChild(mk('div','q-label',`Step ${history.length+1}`));
+  $card.appendChild(mk('div','q-text',current.q));
+  const opts=mk('div','options');
+  current.opts.forEach(opt=>{
+    const hl=suggestedId&&(opt.id===suggestedId||(opt.next&&hasId(opt.next,suggestedId)));
+    const btn=mk('button','opt-btn'+(hl?' hl':''),
+      `<span class="opt-icon">${opt.icon||'▸'}</span><span class="opt-label">${opt.label}</span><span class="opt-arr">›</span>`);
+    btn.addEventListener('click',()=>choose(opt));
+    opts.appendChild(btn);
+  });
+  $card.appendChild(opts);
+  renderNav();
+}
+
+function renderResult(id){
+  const g=gl(id); renderProg(true); renderBC();
+  $card.innerHTML=`
+    <div class="result-card">
+      <div class="result-badge">✓ Guideline found</div>
+      <div class="result-title">${g.title}</div>
+      <div class="result-desc">RecyClass Design for Recycling Guideline</div>
+      <button class="dl-btn" onclick="window.open('${g.url}','_blank')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Open PDF
+      </button>
+      <div class="url-copy-row">
+        <span class="url-text" id="pdfUrl">${g.url}</span>
+        <button class="copy-btn" onclick="copyUrl('${g.url}',this)">Copy link</button>
+      </div>
+    </div>`;
+  renderNav(true);
+}
+
+function copyUrl(url, btn) {
+  navigator.clipboard.writeText(url).then(() => {
+    btn.textContent = '✓ Copied!';
+    setTimeout(() => btn.textContent = 'Copy link', 2000);
+  }).catch(() => {
+    // fallback: select the text
+    const el = document.getElementById('pdfUrl');
+    const range = document.createRange();
+    range.selectNode(el);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+  });
+}
+
+function renderBC(){
+  $bc.innerHTML='';
+  history.forEach((h,i)=>{
+    if(i>0) $bc.appendChild(mk('span','crumb-sep','›'));
+    $bc.appendChild(mk('span','crumb',h.label));
+  });
+}
+
+function renderProg(done=false){
+  $prog.innerHTML='';
+  for(let i=0;i<MAX;i++){
+    const d=mk('div','dot-s');
+    if(done||i<history.length) d.classList.add('done');
+    if(!done&&i===history.length) d.classList.add('active');
+    $prog.appendChild(d);
+  }
+}
+
+function renderNav(){
+  $nav.style.display=history.length>0?'flex':'none';
+  $nav.innerHTML='';
+  if(history.length>0){
+    const b=mk('button','nav-btn','← Back');
+    b.addEventListener('click',goBack); $nav.appendChild(b);
+  }
+  const r=mk('button','nav-btn','↺ Start over');
+  r.addEventListener('click',reset); $nav.appendChild(r);
+}
+
+function choose(opt){
+  history.push({node:current,label:opt.label});
+  if(opt.id){ current=null; renderResult(opt.id); }
+  else if(opt.next){ current=opt.next; render(); }
+}
+
+function goBack(){
+  if(!history.length) return;
+  const p=history.pop(); current=p.node; render();
+}
+
+function reset(){
+  history=[]; current=TREE; suggestedId=null;
+  document.getElementById('interpretation').classList.remove('on');
+  render();
+}
+
+// ── AI ──────────────────────────────────────────────────────────────
+async function analyseProduct(){
+  const val=document.getElementById('aiInput').value.trim();
+  if(!val) return;
+  const btn=document.getElementById('aiBtn');
+  const thinking=document.getElementById('thinking');
+  const interp=document.getElementById('interpretation');
+  btn.disabled=true;
+  thinking.classList.add('on');
+  interp.classList.remove('on');
+
+  const list=GL.map(g=>`- id:"${g.id}" | "${g.title}"`).join('\n');
+  const prompt=`You are a packaging recycling classification expert. Match the user's product description to exactly one RecyClass Design for Recycling Guideline.
+
+Guidelines:
+${list}
+
+User product: "${val}"
+
+Reply with ONLY this JSON, no markdown, no explanation:
+{"id":"<one id from above>","reasoning":"<one sentence: material, form, colour reasoning>"}`;
+
+  try{
+    const res=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        model:"claude-sonnet-4-20250514",
+        max_tokens:200,
+        messages:[{role:"user",content:prompt}]
+      })
+    });
+    const data=await res.json();
+    const raw=data.content?.find(b=>b.type==="text")?.text||"";
+    const parsed=JSON.parse(raw.replace(/```json|```/g,"").trim());
+    const g=gl(parsed.id);
+    if(!g) throw new Error("bad id");
+
+    suggestedId=parsed.id;
+    interp.innerHTML=`<strong>🎯 ${g.title}</strong><br><span style="color:var(--muted);font-size:12px">${parsed.reasoning} — navigating the tree for you…</span>`;
+    interp.classList.add('on');
+
+    // Reset and auto-walk the tree step by step
+    history=[]; current=TREE; render();
+    document.getElementById('card').scrollIntoView({behavior:'smooth',block:'nearest'});
+    await autoWalk(parsed.id);
+  } catch(e){
+    interp.innerHTML=`<span style="color:#e07070">Couldn't identify the product automatically. Please use the manual selector below.</span>`;
+    interp.classList.add('on');
+  }
+  btn.disabled=false;
+  thinking.classList.remove('on');
+}
+
+// Auto-walk: find the path to targetId in the tree, click each step with a delay
+function findPath(node, targetId, path=[]) {
+  for (const opt of node.opts) {
+    if (opt.id === targetId) return [...path, opt];
+    if (opt.next) {
+      const found = findPath(opt.next, targetId, [...path, opt]);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+async function autoWalk(targetId){
+  const path = findPath(TREE, targetId);
+  if (!path) return;
+  history=[]; current=TREE; render();
+  await sleep(600);
+  for (const opt of path) {
+    // Highlight the button briefly before clicking
+    const btns = document.querySelectorAll('.opt-btn');
+    btns.forEach(b => {
+      if (b.querySelector('.opt-label')?.textContent === opt.label) {
+        b.classList.add('auto-click');
+      }
+    });
+    await sleep(500);
+    choose(opt);
+    await sleep(opt.id ? 0 : 500); // no pause after final step
+  }
+}
+
+document.getElementById('aiInput').addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();analyseProduct();}
+});
+document.getElementById('aiInput').addEventListener('input',function(){
+  this.style.height='auto';
+  this.style.height=Math.min(this.scrollHeight,120)+'px';
+});
+
+render();
+
+</script>
+</body>
+</html>
